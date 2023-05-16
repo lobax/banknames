@@ -7,9 +7,6 @@
   "scripts": {
     "start": "node index.mjs"
   },
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "shelljs": "^0.8.5"
-  }
+  "author": "Kristian Alvarez",
+  "license": "BSD"
 }

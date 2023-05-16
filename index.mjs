@@ -4,10 +4,10 @@ import { execSync } from 'child_process';
 import * as readline from 'readline';
 
 const BIC_PDF="https://www.iso9362.org/bicservice/public/v1/bicdata/_pdf";
-const TMP_DIR='tmp/'
-const BIC_PDF_FILE= TMP_DIR + "isobic.pdf"
-const BIC_CSV_FILE= TMP_DIR +  "isobic.csv"
-const JSON_FILE = 'banks.json';
+const TMP_DIR='tmp/';
+const BIC_PDF_FILE= TMP_DIR + "isobic.pdf";
+const BIC_CSV_FILE= TMP_DIR +  "isobic.csv";
+const TARGET_DIR = "banks/";
 
 async function dowload(url, file_location) {
     return new Promise((resolve, reject) => {
@@ -52,26 +52,30 @@ async function processFile(csvFile) {
         if (!line.includes("Record Creation Date")) {
             const arr = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
             const bic = arr[3];
-            const brch = arr[4];
             const name = arr[5];
             const bank = bic.substring(0,4);
             const country = bic.substring(4,6);
             if (!banks.has(country)) {
-                banks.set(country, {})
+                banks.set(country, {});
             }
             if (!banks.get(country)[bank]) {
-                banks.get(country)[bank] = {}
-            }
-            if (banks.get(country)[bank][bic]) {
-                banks.get(country)[bank][bic].brch.push(brch)
-            }
-            else {
-                banks.get(country)[bank][bic] = {name: name, brch: []};
+                banks.get(country)[bank] = name.replaceAll('\"', '');
             }
         }
     }
-    return Object.fromEntries(banks);
+    return banks;
 }
+
+async function write_to_file(worldBanks) {
+    if (!fs.existsSync(TARGET_DIR)) {
+        fs.mkdirSync(TARGET_DIR);
+    }
+    for (const [country, banks] of worldBanks) {
+        const file = TARGET_DIR + country + ".json";
+        fs.writeFileSync(file, JSON.stringify(banks));
+    }
+}
+
 
 async function setup() {
     if (!fs.existsSync(TMP_DIR)) {
@@ -84,7 +88,7 @@ async function setup() {
     console.log("Parsing data from CSV...");
     const banks = await processFile(BIC_CSV_FILE);
     console.log("Creating json...");
-    fs.writeFileSync(JSON_FILE, JSON.stringify(banks))
+    await write_to_file(banks);
 }
 
 (async() => {
