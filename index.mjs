@@ -72,7 +72,7 @@ async function write_to_file(worldBanks) {
     }
     for (const [country, banks] of worldBanks) {
         const file = TARGET_DIR + country + ".json";
-        fs.writeFileSync(file, JSON.stringify(banks));
+        fs.writeFileSync(file, JSON.stringify(banks, null, "  "));
     }
 }
 
