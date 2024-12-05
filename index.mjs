@@ -51,8 +51,8 @@ async function processFile(csvFile) {
     for await (const line of rl) {
         if (!line.includes("Record Creation Date")) {
             const arr = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-            const bic = arr[3];
-            const name = arr[5];
+            const bic = arr[2];
+            const name = arr[4];
             const bank = bic.substring(0,4);
             const country = bic.substring(4,6);
             if (!banks.has(country)) {
