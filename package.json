@@ -5,7 +5,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.mjs"
+    "build": "node index.mjs"
   },
   "author": "Kristian Alvarez",
   "license": "BSD"

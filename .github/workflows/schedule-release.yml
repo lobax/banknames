@@ -1,0 +1,32 @@
+name: Schedule A Release
+
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Schedule a Release
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4	
+      - name: Build Latest
+        run: | 
+          npm install
+          npm run build
+          zip -r banknames.zip banks
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=v$(date +'%y.%-m') 
+          git tag $version
+          git push origin $version
+          gh release create "$version" \
+          banknames.zip \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${version#v}" \
+              --generate-notes \
