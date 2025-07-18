@@ -9,16 +9,28 @@ const BIC_PDF_FILE= TMP_DIR + "isobic.pdf";
 const BIC_CSV_FILE= TMP_DIR +  "isobic.csv";
 const TARGET_DIR = "banks/";
 
+async function setup() {
+    if (!fs.existsSync(TMP_DIR)) {
+        fs.mkdirSync(TMP_DIR);
+    }
+    console.log("Downloading ISO BIC Directory...")
+    await download(BIC_PDF, BIC_PDF_FILE);
+    console.log("Converting to CSV...");
+    convert(BIC_PDF_FILE, BIC_CSV_FILE);
+    console.log("Parsing data from CSV...");
+    const banks = await processFile(BIC_CSV_FILE);
+    console.log("Creating json...");
+    await writeToFile(banks);
+}
+
 async function download(url, file_location) {
     if (fs.existsSync(file_location)) {
         console.log("File already exists");
         return;
     }
-
     const writer = fs.createWriteStream(file_location);
-
-	// The request times out unless we have browser-like request headers
-	// This includes the compressed encoding headers, despite the response not being compressed
+    // The request times out unless we have browser-like request headers
+    // This includes the compressed encoding headers, despite the response not being compressed
     const headers = {
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:139.0) Gecko/20100101 Firefox/139.0',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -27,7 +39,6 @@ async function download(url, file_location) {
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
     };
-
     return new Promise((resolve, reject) => {
         const req = httpsGet(
             url,
@@ -40,26 +51,21 @@ async function download(url, file_location) {
                     fs.unlink(file_location, () => {});
                     return reject(new Error(`Failed to get '${url}' (status: ${res.statusCode})`));
                 }
-
                 res.pipe(writer);
             }
         );
-
         req.on('timeout', () => {
             req.destroy();
             fs.unlink(file_location, () => {});
             reject(new Error('Request timed out'));
         });
-
         req.on('error', (err) => {
             fs.unlink(file_location, () => reject(err));
         });
-
         writer.on('finish', () => {
             writer.close();
             resolve();
         });
-
         writer.on('error', (err) => {
             fs.unlink(file_location, () => reject(err));
         });
@@ -97,7 +103,7 @@ async function processFile(csvFile) {
     return banks;
 }
 
-async function write_to_file(worldBanks) {
+async function writeToFile(worldBanks) {
     if (!fs.existsSync(TARGET_DIR)) {
         fs.mkdirSync(TARGET_DIR);
     }
@@ -107,25 +113,10 @@ async function write_to_file(worldBanks) {
     }
 }
 
-
-async function setup() {
-    if (!fs.existsSync(TMP_DIR)) {
-        fs.mkdirSync(TMP_DIR);
-    }
-    console.log("Downloading ISO BIC Directory...")
-    await download(BIC_PDF, BIC_PDF_FILE);
-    console.log("Converting to CSV...");
-    convert(BIC_PDF_FILE, BIC_CSV_FILE);
-    console.log("Parsing data from CSV...");
-    const banks = await processFile(BIC_CSV_FILE);
-    console.log("Creating json...");
-    await write_to_file(banks);
-}
-
 (async () => {
     try {
-		await setup();
+        await setup();
     } catch (err) {
-        console.error("Download failed:", err.message);
+        console.error("Failed to build banknames:", err.message);
     }
 })();
